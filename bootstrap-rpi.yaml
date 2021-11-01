@@ -1,0 +1,10 @@
+- name: Init raspberry pi
+  host: all
+  become: yes
+  serial: 1
+  roles:
+    - bootstrap
+    - update
+    - sshd
+    - pivpn
+    - pihole

@@ -1,0 +1,45 @@
+- name: Add ssh key
+  ansible.posix.authorized_key:
+    key: https://github.com/{{ github_user_for_ssh_key }}.keys
+    user: "{{ ansible_user }}"
+    comment: "github-{{ github_user_for_ssh_key }}"
+
+- name: Lock password for {{ ansible_user }}
+  user:
+    name: "{{ ansible_user }}"
+    password_lock: yes
+
+- name: Set timezone
+  lineinfile:
+    path: /etc/timezone
+    regexp: "^"
+    line: "{{ timezone }}"
+
+- name: Set localtime
+  file:
+    src: /usr/share/zoneinfo/{{ timezone }}
+    dest: /etc/localtime
+    state: link
+
+- name: Set hostname
+  lineinfile:
+    path: /etc/hostname
+    regexp: "^"
+    line: "{{ inventory_hostname }}"
+  notify: Reboot after hostname change
+
+- name: Set hosts
+  lineinfile:
+    path: /etc/hosts
+    regexp: "^127.0.1.1"
+    line: 127.0.1.1       {{ inventory_hostname }}
+  notify: Reboot after hostname change
+
+- name: Set custom DNS servers
+  blockinfile:
+    path: /etc/dhcpcd.conf
+    block: static domain_name_servers={{ static_dns }}
+  notify: Restart dhcpcd
+
+- name: Flush handlers
+  meta: flush_handlers
